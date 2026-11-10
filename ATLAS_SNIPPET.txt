@@ -1,0 +1,6 @@
+In the dcc-atlas repo, open config.js. The "stock" line already exists as "soon". Replace that one line with:
+
+    { id: "stock", name: "IMS", desc: "What is on the shelf, in every warehouse.", url: "https://dcc-ims.vercel.app", status: "live", icon: "stock", tint: "#e4f1ef", color: "#0f766e" },
+
+Commit and push. Atlas redeploys and IMS shows as Live.
+When the final product name is chosen, change appName in dcc-ims/config.js (and the name here if you want Atlas to show it too).
