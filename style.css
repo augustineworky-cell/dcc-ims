@@ -707,3 +707,65 @@ a.nv.on::before { content: ""; position: absolute; left: -14px; top: 10px; botto
 .nv { transition: background .25s, color .25s, transform .2s; }
 .nv:hover { transform: translateX(3px); }
 @media (prefers-reduced-motion: reduce) { .pgx > *, .hx-bg i, .hx-i, #rbar { animation: none !important; } }
+
+/* v18: sliding pictures in banners */
+.hx { min-height: 178px; padding-right: 0; flex-wrap: nowrap; align-items: stretch; }
+.hx-l { display: flex; flex-direction: column; justify-content: center; gap: 18px; padding: 4px 0; min-width: 0; flex: 1 1 auto; }
+.hx-sl { position: relative; flex: 0 0 min(46%, 520px); margin: -28px 0 -28px 0; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 28%); mask-image: linear-gradient(90deg, transparent, #000 28%); }
+.hx-sl:empty { display: none; }
+.hx-row { position: absolute; left: 0; right: 0; height: calc(50% - 8px); overflow: hidden; top: 8px; }
+.hx-row + .hx-row { top: calc(50% + 4px); }
+.hx-track { display: flex; gap: 12px; width: max-content; height: 100%; animation: hxm 46s linear infinite; padding-left: 12px; }
+.hx-row.rev .hx-track { animation-direction: reverse; animation-duration: 54s; }
+@keyframes hxm { to { transform: translateX(-50%); } }
+.hx-tile { flex: none; height: 100%; aspect-ratio: 1; border-radius: 16px; background: #fff; padding: 6px; box-shadow: 0 8px 22px -10px rgba(0,0,0,.55); overflow: hidden; display: block; }
+.hx-tile img, .hx-tile .art { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 10px; }
+.hx-ph { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0; transform: scale(1.12); transition: opacity 1s ease, transform 6s ease-out; }
+.hx-ph.on { opacity: 1; transform: scale(1); }
+.hx-sl.ph::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, rgba(0,0,0,.35)); }
+.hx-dots { position: absolute; z-index: 2; bottom: 14px; right: 18px; display: flex; gap: 6px; }
+.hx-dots i { width: 7px; height: 7px; border-radius: 99px; background: rgba(255,255,255,.45); transition: width .3s, background .3s; }
+.hx-dots i.on { width: 20px; background: #fff; }
+@media (max-width: 900px) { .hx-sl { display: none; } }
+@media (prefers-reduced-motion: reduce) { .hx-track { animation: none; } }
+
+
+/* v18: item panel border + particles that match the product */
+@property --ang { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+@keyframes ipang { to { --ang: 360deg; } }
+.ip-fx { position: absolute; top: 0; right: 0; bottom: 0; width: min(440px, 100%); pointer-events: none; z-index: 4; overflow: hidden; --c1: #7c8cff; --c2: #35d0a8; --c3: #ffb468; }
+.ip-fx::before { content: ""; position: absolute; inset: 0; padding: 4px; background: conic-gradient(from var(--ang), var(--c1), var(--c2), var(--c3), var(--c1)); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); animation: ipang 3.2s linear infinite; }
+.ip-glow { position: absolute; inset: 0; box-shadow: inset 0 0 46px -6px var(--c1), inset 0 0 90px -30px var(--c3); opacity: .55; animation: ipglow 2.6s ease-in-out infinite alternate; }
+@keyframes ipglow { from { opacity: .35; } to { opacity: .75; } }
+.ip-fx i { position: absolute; left: var(--x); width: var(--s); height: var(--s); border-radius: 50%; opacity: 0; background: var(--c3); box-shadow: 0 0 8px 1px var(--c3); animation: iprise var(--t) linear var(--d) infinite; }
+@keyframes iprise { 0% { transform: translate(0, 0) scale(1); opacity: 0; } 12% { opacity: .95; } 100% { transform: translate(var(--dx), -105vh) scale(.3); opacity: 0; } }
+@keyframes ipfall { 0% { transform: translate(0, -20px) rotate(0); opacity: 0; } 12% { opacity: .95; } 100% { transform: translate(var(--dx), 105vh) rotate(360deg); opacity: 0; } }
+@keyframes iptw { 0%, 100% { transform: scale(.2); opacity: 0; } 50% { transform: scale(1); opacity: 1; } }
+
+/* fire: flames along the bottom edge, embers rising */
+.t-fire { --c1: #ff2d00; --c2: #ff9500; --c3: #ffd000; }
+.t-fire::before { animation-duration: 1.6s; }
+.t-fire i { bottom: -12px; background: radial-gradient(circle, #fff3a0, #ff9500 55%, #ff2d00); box-shadow: 0 0 10px 2px rgba(255,120,0,.8); }
+.t-fire::after { content: ""; position: absolute; left: -10%; right: -10%; bottom: -30px; height: 150px; background: radial-gradient(60% 100% at 20% 100%, #ff9500, transparent 70%), radial-gradient(55% 100% at 55% 100%, #ff2d00, transparent 70%), radial-gradient(50% 90% at 85% 100%, #ffd000, transparent 70%); filter: blur(14px); opacity: .75; animation: ipflame .55s ease-in-out infinite alternate; }
+@keyframes ipflame { from { transform: scaleY(.8) translateX(-6px); opacity: .6; } to { transform: scaleY(1.2) translateX(6px); opacity: .9; } }
+/* frost: icy edge, snow falling */
+.t-frost { --c1: #bfe9ff; --c2: #5bb8ff; --c3: #ffffff; }
+.t-frost::before { animation-duration: 5s; }
+.t-frost i { top: -12px; background: #fff; box-shadow: 0 0 8px 2px rgba(150,215,255,.9); animation-name: ipfall; }
+.t-frost::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 120px; background: linear-gradient(180deg, rgba(190,233,255,.55), transparent); }
+/* bubbles */
+.t-bubble { --c1: #36c6ff; --c2: #3ddcb9; --c3: #c9f2ff; }
+.t-bubble i { bottom: -14px; background: rgba(255,255,255,.18); border: 1.5px solid rgba(120,215,255,.95); box-shadow: inset 0 0 4px rgba(255,255,255,.8); }
+/* chocolate */
+.t-choco { --c1: #7b3f1d; --c2: #d4a24c; --c3: #fff2c9; }
+.t-choco::before { animation-duration: 4.5s; }
+.t-choco i { top: 8%; bottom: auto; animation-name: iptw; animation-duration: calc(var(--t) / 2); background: #ffe29a; box-shadow: 0 0 9px 2px rgba(212,162,76,.9); top: calc(var(--x) * .9 + 4%); }
+/* golden crunch */
+.t-gold { --c1: #f5c542; --c2: #ffe59a; --c3: #e08a00; }
+.t-gold i { top: -12px; border-radius: 2px; background: #f5c542; box-shadow: none; animation-name: ipfall; }
+/* fresh leaves */
+.t-leaf { --c1: #22a65a; --c2: #9be36d; --c3: #0f7b4a; }
+.t-leaf i { top: -14px; width: calc(var(--s) * 1.8); height: calc(var(--s) * 1.8); border-radius: 0 100% 0 100%; background: #35c26f; box-shadow: none; animation-name: ipfall; animation-duration: calc(var(--t) * 1.4); }
+/* default sparkle */
+.t-spark i { top: calc(var(--x) * .95 + 2%); animation-name: iptw; animation-duration: calc(var(--t) / 2); }
+@media (prefers-reduced-motion: reduce) { .ip-fx i, .ip-fx::before, .ip-fx::after, .ip-glow { animation: none !important; } }

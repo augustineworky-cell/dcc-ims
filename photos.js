@@ -123,7 +123,7 @@
   function ensurePanel() {
     if (panel) return;
     panel = document.createElement('div'); panel.className = 'ip-wrap'; panel.hidden = true;
-    panel.innerHTML = '<div class="ip-bg" data-close="1"></div><aside class="ip" role="dialog" aria-label="Item details"><button type="button" class="ip-x" data-close="1" aria-label="Close">×</button><div class="ip-body"></div></aside>';
+    panel.innerHTML = '<div class="ip-bg" data-close="1"></div><aside class="ip" role="dialog" aria-label="Item details"><button type="button" class="ip-x" data-close="1" aria-label="Close">×</button><div class="ip-body"></div></aside><div class="ip-fx" aria-hidden="true"></div>';
     document.body.appendChild(panel);
     panel.addEventListener('click', function (e) { if (e.target.closest('[data-close]')) PH.close(); });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !panel.hidden) PH.close(); });
@@ -155,7 +155,34 @@
       }).join('') + '</tbody></table>' : '<div class="empty sm">No movements yet.</div>';
     } catch (x) { if (box) box.innerHTML = '<div class="empty sm">' + esc(errMsg(x)) + '</div>'; }
   };
+
+  /* ---------- border + particle effect that matches what the product is ---------- */
+  var THEMES = [
+    ['frost', /ice ?cream|cone|kulfi|sundae|gelato|\bmf\b|\btub\b|brooklyn|\btbc\b|popsicle|frozen|\bcup\b|sorbet/],
+    ['fire', /noodle|ramen|thukpa|khow|manchurian|chill?i|spicy|peri|tikka|masala|biryani|momo|schezwan|szechuan|jalape|nugget|chicken|burger|pizza|patty|kebab|korean|curry|hot\b/],
+    ['bubble', /water|juice|drink|coconut|shake|lassi|soda|cola|beverage|milk|syrup|squash|lemon|orange|mango/],
+    ['choco', /choco|cocoa|brownie|cookie|biscuit|cake|truffle|mocha|coffee|caramel|nutella|hazelnut/],
+    ['gold', /chips|crisps|potato|bites|snack|stick|namkeen|popcorn|nacho|puff|crunch|fries|cracker|bhujia/],
+    ['leaf', /veg|fresh|organic|salad|mint|fruit|berry|berries|green|herb|paneer|spinach|corn|pea\b|paper|bag/]
+  ];
+  function themeOf(it) {
+    var n = (String(it.name || '') + ' ' + String(it.group_name || '')).toLowerCase();
+    for (var i = 0; i < THEMES.length; i++) if (THEMES[i][1].test(n)) return THEMES[i][0];
+    return 'spark';
+  }
+  var PCOUNT = { fire: 22, frost: 30, bubble: 20, choco: 18, gold: 22, leaf: 14, spark: 16 };
+  function setFx(it) {
+    var el = panel && panel.querySelector('.ip-fx'); if (!el) return;
+    var t = themeOf(it), n = PCOUNT[t], h = '';
+    for (var k = 0; k < n; k++) {
+      var r = function () { return Math.random(); };
+      h += '<i style="--x:' + (r() * 100).toFixed(1) + '%;--s:' + (3 + r() * 7).toFixed(1) + 'px;--d:' + (-r() * 9).toFixed(2) + 's;--t:' + (4 + r() * 6).toFixed(2) + 's;--dx:' + ((r() - .5) * 60).toFixed(0) + 'px"></i>';
+    }
+    el.className = 'ip-fx t-' + t;
+    el.innerHTML = '<span class="ip-glow"></span>' + h;
+  }
   function render(it) {
+    setFx(it);
     var E = env(), m = maps(), h = m.health[it.id] || {}, core = E.core;
     var BANDS = { out: ['Out of stock', '#c8102e'], critical: ['Critical', '#e5483a'], low: ['Low', '#e08a00'], healthy: ['Healthy', '#0f7b4a'], over: ['Over', '#3a6fd8'], 'no-usage': ['No usage', '#7a869b'] };
     var b = BANDS[h.band] || BANDS['no-usage'];

@@ -290,8 +290,27 @@
     var t = HX[title];
     if (!t) return '<h1 class="page-h">' + esc(title) + '</h1><p class="page-s">' + esc(sub) + '</p>';
     return '<section class="hx" style="--hxa:' + t[0] + ';--hxb:' + t[1] + ';--hxc:' + t[2] + '"><div class="hx-bg" aria-hidden="true"><i></i><i></i><i></i></div>' +
-      '<div class="hx-t"><span class="hx-i"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + t[3] + '"></path></svg></span><div><small>' + esc(NAMEU()) + ' · ' + t[4] + '</small><h1 class="page-h">' + esc(title) + '</h1><p class="page-s">' + esc(sub) + '</p></div></div>' +
-      '<div class="hx-s" id="hxs"></div></section>';
+      '<div class="hx-l"><div class="hx-t"><span class="hx-i"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + t[3] + '"></path></svg></span><div><small>' + esc(NAMEU()) + ' · ' + t[4] + '</small><h1 class="page-h">' + esc(title) + '</h1><p class="page-s">' + esc(sub) + '</p></div></div>' +
+      '<div class="hx-s" id="hxs"></div></div><div class="hx-sl" id="hxsl" aria-hidden="true"></div></section>';
+  }
+  /* sliding pictures inside the banner: 'tiles' = two rows of product photos drifting in opposite directions, 'photos' = crossfading slideshow */
+  function hxTiles(items) {
+    var el = document.getElementById('hxsl'); if (!el || !window.PHOTOS) return;
+    var L = items.filter(function (i) { return i && i.image_url; }).slice(0, 24);
+    if (L.length < 6) return;
+    function row(a, rev) { var h = a.map(function (i) { return '<span class="hx-tile">' + window.PHOTOS.inner(i) + '</span>'; }).join(''); return '<div class="hx-row' + (rev ? ' rev' : '') + '"><div class="hx-track">' + h + h + '</div></div>'; }
+    var half = Math.ceil(L.length / 2);
+    el.innerHTML = row(L.slice(0, half), false) + row(L.slice(half).concat(L.slice(0, 3)), true);
+  }
+  function hxPhotos(urls) {
+    var el = document.getElementById('hxsl'); if (!el) return;
+    el.className = 'hx-sl ph';
+    el.innerHTML = urls.map(function (u, k) { return '<div class="hx-ph' + (k === 0 ? ' on' : '') + '" style="background-image:url(' + u + ')"></div>'; }).join('') + '<div class="hx-dots">' + urls.map(function (u, k) { return '<i' + (k === 0 ? ' class="on"' : '') + '></i>'; }).join('') + '</div>';
+    var k = 0, t = setInterval(function () {
+      if (!el.isConnected) { clearInterval(t); return; }
+      var s = el.querySelectorAll('.hx-ph'), d = el.querySelectorAll('.hx-dots i');
+      s[k].classList.remove('on'); d[k].classList.remove('on'); k = (k + 1) % s.length; s[k].classList.add('on'); d[k].classList.add('on');
+    }, 3600);
   }
   function NAMEU() { return String((window.CFG && window.CFG.appName) || 'GoodsGuru').toUpperCase(); }
   function hxChips(list) { var el = document.getElementById('hxs'); if (!el) return; el.innerHTML = list.map(function (x) { return '<span class="hx-c"><b>' + esc(x[0]) + '</b>' + esc(x[1]) + '</span>'; }).join(''); }
@@ -332,6 +351,7 @@
     core.items.forEach(function (i) { iby[i.id] = i; });
     core.bal.forEach(function (b) { (by[b.item_id] = by[b.item_id] || {})[b.warehouse_id] = Number(b.qty); if (Number(b.qty) < 0) neg[b.item_id] = 1; });
     var counts = { all: core.health.length, instock: 0, neg: Object.keys(neg).length };
+    setTimeout(function () { hxTiles(core.items.filter(function (i) { return i.image_url; }).sort(function (a, b) { return (by[b.id] ? Object.keys(by[b.id]).reduce(function (s, k) { return s + (by[b.id][k] || 0); }, 0) : 0) - (by[a.id] ? Object.keys(by[a.id]).reduce(function (s, k) { return s + (by[a.id][k] || 0); }, 0) : 0); })); }, 0);
     core.health.forEach(function (h) { counts[h.band] = (counts[h.band] || 0) + 1; if (Number(h.stock) > 0) counts.instock++; });
     var CH = [['all', 'All'], ['instock', 'In stock'], ['out', 'Out'], ['critical', 'Critical'], ['low', 'Low'], ['healthy', 'Healthy'], ['over', 'Over'], ['no-usage', 'No usage'], ['neg', 'Negative stock']];
     var WO = [['', 'All warehouses']]; wh.forEach(function (w) { WO.push(['has:' + w.id, 'In stock at ' + w.code]); WO.push(['no:' + w.id, 'Not in stock at ' + w.code]); });
@@ -440,6 +460,7 @@
     $('#dc').onclick = function () { S.grp = ''; $('#dg').value = ''; paint(true); };
     paint(false);
     hxChips([[String(core.items.length), 'items'], [String(core.wh.length), 'warehouses'], [String(sg.length), 'to reorder']]);
+    (function () { var by = {}; core.items.forEach(function (i) { by[i.id] = i; }); hxTiles(core.health.filter(function (h) { return Number(h.avg_daily) > 0; }).sort(function (a, b) { return Number(b.avg_daily) - Number(a.avg_daily); }).map(function (h) { return by[h.item_id]; })); })();
     soft(v, c, 'dashboard');
   };
 
@@ -624,6 +645,7 @@
           '<div class="tag" style="margin-top:14px">Most stocked</div>' + (x.top.length ? x.top.map(function (b) { var it = iby[b.item_id]; return '<div class="wh2-r"><span class="th" data-th="' + esc(it.id) + '">' + (window.PHOTOS ? window.PHOTOS.inner(it) : '') + '</span><span class="wh2-n"><b>' + esc(it.code) + '</b> <span class="mu">' + esc(it.name) + '</span></span><b>' + num(b.qty) + '</b></div>'; }).join('') : '<div class="empty">Nothing on the shelf.</div>') + '</section>';
       }).join('') + '</div>';
     hxChips([[String(core.wh.length), 'locations'], [num(tot), 'units in total']]);
+    hxPhotos(['img/wh1.webp', 'img/wh2.webp', 'img/wh3.webp', 'img/wh4.webp']);
     soft(v, c, 'warehouses');
   };
 
