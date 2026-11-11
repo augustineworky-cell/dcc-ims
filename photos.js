@@ -179,7 +179,7 @@
     '<filter id="fxFr" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="4" seed="2"/><feColorMatrix values="0 0 0 0 0.93  0 0 0 0 0.98  0 0 0 0 1  0 0 0 9 -4.2"/></filter>' +
     '<filter id="fxFr2" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.012 0.02" numOctaves="3" seed="7"/><feColorMatrix values="0 0 0 0 0.8  0 0 0 0 0.93  0 0 0 0 1  0 0 0 5 -2.2"/></filter>' +
     '<filter id="fxW" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.012 0.02" numOctaves="2" seed="5"><animate attributeName="baseFrequency" dur="9s" values="0.012 0.02;0.02 0.014;0.012 0.02" repeatCount="indefinite"/></feTurbulence><feColorMatrix values="0 0 0 0 0.75  0 0 0 0 0.95  0 0 0 0 1  0 0 0 9 -4.6"/></filter>' +
-    '</defs></svg>';
+    '<filter id="fxH" x="-5%" y="-20%" width="110%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="0.012 0.03" numOctaves="2" seed="3" result="n"><animate attributeName="baseFrequency" dur="2.8s" values="0.012 0.03;0.016 0.04;0.012 0.03" repeatCount="indefinite"/></feTurbulence><feDisplacementMap in="SourceGraphic" in2="n" scale="12" xChannelSelector="R" yChannelSelector="G"/></filter></defs></svg>';
   var PN = { fire: 7, frost: 16, water: 9, choco: 0, gold: 8, leaf: 6, plain: 0 };
   function setFx(it) {
     var el = panel && panel.querySelector('.ip-fx'); if (!el) return;

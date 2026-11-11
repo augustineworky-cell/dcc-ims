@@ -11,7 +11,7 @@
     if (!cur) return;
     cancelAnimationFrame(cur.raf);
     if (cur.cv && cur.cv.parentNode) cur.cv.parentNode.removeChild(cur.cv);
-    if (cur.el) cur.el.classList.remove('has-c');
+    if (cur.el) { cur.el.classList.remove('has-c'); [].forEach.call(cur.el.querySelectorAll('.pf'), function (n) { n.parentNode.removeChild(n); }); }
     cur = null;
   }
   FX.stop = stop;
@@ -146,7 +146,7 @@
       [[22, 0, 110], [22, 1, 100], [34, 0, 118], [34, 1.6, 96], [52, 3, 108]].forEach(function (c) {
         sprites.push({ size: c[0], img: blurred(function (x, w, h) { leafSprite(x, w, h, c[2]); }, c[0] * 2, c[0] * 2, c[1]) });
       });
-      for (var i = 0; i < 16; i++) P.push(mkLeaf(true));
+      for (var i = 0; i < 9; i++) P.push(mkLeaf(true));
     }
     function mkLeaf(init) {
       var s = sprites[Math.floor(Math.random() * sprites.length)];
@@ -258,6 +258,15 @@
   }
 
   /* ---------------- public ---------------- */
+  /* real photographic layers (cut out of real footage stills, animated with CSS) */
+  var B = 'img/fx/';
+  var PHOTO = {
+    fire: '<div class="pf pf-glow"></div><div class="pf pf-fire a"></div><div class="pf pf-fire b"></div><div class="pf pf-fire c"></div>',
+    frost: '<div class="pf pf-fr t"></div><div class="pf pf-fr b"></div><div class="pf pf-fr l"></div><div class="pf pf-fr r"></div><div class="pf pf-fglow"></div>',
+    flour: '<div class="pf pf-pour"></div><div class="pf pf-grain a"></div><div class="pf pf-grain b"></div>',
+    splash: '<div class="pf pf-fruit u1"></div><div class="pf pf-fruit u2"></div><div class="pf pf-fruit u3"></div><div class="pf pf-wet"></div>',
+    leaf: '<div class="pf pf-forest"></div>'
+  };
   FX.play = function (el, theme, name) {
     stop();
     if (!el) return false;
@@ -265,7 +274,12 @@
     var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduce) return false;
     var ok = false;
-    if (theme === 'fire' || theme === 'frost') {
+    if (PHOTO[theme]) {
+      el.classList.add('has-c'); el.insertAdjacentHTML('afterbegin', PHOTO[theme]);
+      cur = { el: el, cv: null, raf: 0 };
+      if (theme !== 'leaf') return true;
+    }
+    if (false && (theme === 'fire' || theme === 'frost')) {
       var cv = document.createElement('canvas'); cv.className = 'fxc';
       var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
       var W = el.clientWidth || 440, H = el.clientHeight || 800;
