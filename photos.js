@@ -178,14 +178,6 @@
       '<div><small>Reorder at</small><b>' + (trig == null ? '–' : num(trig)) + '</b></div>' +
       '<div><small>Lead time</small><b>' + esc(it.lead_time_days) + 'd</b></div>' +
       '<div><small>Pack size</small><b>' + num(it.moq) + '</b></div></div>' +
-      '<details class="ip-help"><summary>What do these numbers mean?</summary><ul>' +
-      '<li><b>In stock</b>: total across all warehouses.</li>' +
-      '<li><b>Sells per day</b>: your average daily sales, from the sales file you upload.</li>' +
-      '<li><b>Max level</b>: the most you should hold = sells per day × lead time × safety factor.</li>' +
-      '<li><b>Reorder at</b>: when stock falls to this, the item shows on the Reorder page (two thirds of max level).</li>' +
-      '<li><b>Lead time</b>: days the supplier takes to deliver after you order.</li>' +
-      '<li><b>Pack size</b>: the supplier\'s minimum order. 0 means none set.</li>' +
-      '<li><b>Critical / Low / Healthy</b>: stock compared with max level. Under 33% is Critical, 33 to 66% Low, up to 100% Healthy.</li></ul></details>' +
       '<div class="tag">By warehouse</div><div class="wl">' + wrows + '</div>' +
       '<div class="tag" style="margin-top:18px">Last movements</div><div id="ipm"><div class="empty sm">Loading…</div></div>' +
       (mg ? '<div class="tag" style="margin-top:18px">Photo · ' + photoCount()[0] + ' of ' + photoCount()[1] + ' items done · this session: ' + ST.ok + ' saved, ' + ST.fail + ' failed</div><div class="pact">' +

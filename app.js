@@ -15,12 +15,14 @@
 
   var MODS = [
     ['dashboard', 'Dashboard', 'M4 13h6V4H4zM14 20h6V11h-6zM14 8h6V4h-6zM4 20h6v-3H4z', 'Stock health across Okhla, Chattarpur and Gurgaon, items to reorder, and what moved today.'],
+    ['warehouses', 'Warehouses', 'M3 21V9l9-6 9 6v12M9 21v-7h6v7', 'Each location side by side with units, items and what is low.'],
     ['stock', 'Stock', 'M3 7l9-4 9 4-9 4zM3 7v10l9 4 9-4V7M12 11v10', 'Every item and how much is in each warehouse, with a search and a health bar.'],
     ['receive', 'Receive', 'M12 4v12M7 11l5 5 5-5M4 20h16', 'Book goods in against a PO or invoice, with batch and expiry where needed.'],
     ['issue', 'Issue', 'M12 20V8M7 13l5-5 5 5M4 4h16', 'Take goods out for a dispatch. Linked to Order to Dispatch later.'],
     ['transfer', 'Transfer', 'M4 8h13M13 4l4 4-4 4M20 16H7M11 12l-4 4 4 4', 'Move stock between Okhla, Chattarpur and Gurgaon in one entry, so nothing goes missing.'],
     ['count', 'Count', 'M5 4h14v16H5zM9 9h6M9 13h6M9 17h3', 'Enter a physical count. The system posts the difference and keeps the history.'],
     ['reorder', 'Reorder', 'M4 4v6h6M20 20v-6h-6M5.5 15a7 7 0 0012 2M18.5 9a7 7 0 00-12-2', 'What to order this week, rounded to pack size, with one-click indents like IND-18.'],
+    ['activity', 'Activity', 'M3 12h4l3-8 4 16 3-8h4', 'Every stock movement in one place.'],
     ['upload', 'Upload', 'M12 16V4M7 9l5-5 5 5M4 20h16', 'Update stock, sales speed and items from your Tally Excel files, with a preview before anything changes.'],
     ['settings', 'Settings', 'M4 7h9M17 7h3M4 17h3M11 17h9M13 5v4M7 15v4', 'Warehouses, items, suppliers, people and roles.']
   ];
@@ -239,10 +241,14 @@
     }
     window.scrollTo(0, 0);
     var v = $('#view');
+    var idx = MODS.indexOf(m), dir = S.last == null || idx >= S.last ? 'f' : 'b'; S.last = idx;
+    var rb = document.getElementById('rbar');
+    if (!rb) { rb = document.createElement('div'); rb.id = 'rbar'; document.body.appendChild(rb); }
+    rb.className = ''; void rb.offsetWidth; rb.className = 'go';
     var banner = S.demo ? '<div class="banner">Preview mode. You are not signed in, so you are seeing sample data and nothing here is saved. Add the Supabase key in config.js to switch on real sign-in.</div>' : '';
     var pg = window.PAGES && window.PAGES[m[0]];
     if (!pg) { v.innerHTML = banner + '<h1 class="page-h">' + m[1] + '</h1><p class="page-s">' + esc(m[3]) + '</p>'; return; }
-    v.innerHTML = banner + '<div id="pg"></div>';
+    v.innerHTML = banner + '<div id="pg" class="pgx ' + dir + '"></div>';
     var mine = ++S.tick;
     pg($('#pg'), { sb: S.sb, demo: S.demo, me: S.me, say: say, esc: esc }).catch(function (e) { if (mine === S.tick) $('#pg').innerHTML = '<div class="card2"><h3>Something went wrong</h3><p>' + esc(e && e.message || e) + '</p></div>'; });
   }

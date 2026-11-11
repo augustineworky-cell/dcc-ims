@@ -252,7 +252,7 @@
     try {
       if (!c || !window.GG_BADGES) return c;
       var r = 0; c.health.forEach(function (h) { if (Number(h.max_level) > 0 && (h.band === 'out' || h.band === 'critical' || h.band === 'low')) r++; });
-      window.GG_BADGES({ items: c.health.length, reorder: r });
+      window.GG_BADGES({ items: c.items.length, reorder: r });
     } catch (e) { }
     return c;
   }
@@ -275,7 +275,27 @@
   var SK = '<div class="sk"><div class="sk-h"></div><div class="sk-s"></div><div class="sk-kp"><i></i><i></i><i></i><i></i></div><div class="sk-card">' + new Array(8).join('<div class="sk-row"><i class="sk-th"></i><span><i></i><i></i></span><b></b></div>') + '</div></div>';
   function loading(v, more) { if (core && !more) return; v.innerHTML = SK; }
   function failed(v, e) { v.innerHTML = '<div class="card2"><div class="tag">Could not load</div><h3>Something went wrong</h3><p>' + esc(errMsg(e)) + '</p></div>'; }
-  function head(title, sub) { return '<h1 class="page-h">' + esc(title) + '</h1><p class="page-s">' + esc(sub) + '</p>'; }
+  var HX = {
+    Dashboard: ['#0b0f1a', '#2a3a6b', '#5b8cff', 'M4 13h6V4H4zM14 20h6V11h-6zM14 8h6V4h-6zM4 20h6v-3H4z', 'Overview'],
+    Stock: ['#0b1f1c', '#0f6b5c', '#35d0a8', 'M3 7l9-4 9 4-9 4zM3 7v10l9 4 9-4V7M12 11v10', 'Stock'],
+    Receive: ['#07210f', '#0f7b4a', '#7be0a6', 'M12 4v12M7 11l5 5 5-5M4 20h16', 'Movements'],
+    Issue: ['#2a1204', '#c2570c', '#ffb468', 'M12 20V8M7 13l5-5 5 5M4 4h16', 'Movements'],
+    Transfer: ['#07142e', '#2d6cdf', '#8fb6ff', 'M4 8h13M13 4l4 4-4 4M20 16H7M11 12l-4 4 4 4', 'Movements'],
+    Count: ['#1a0d33', '#6b43d6', '#c0a4ff', 'M5 4h14v16H5zM9 9h6M9 13h6M9 17h3', 'Movements'],
+    Reorder: ['#2b0710', '#c8102e', '#ff8fa0', 'M4 4v6h6M20 20v-6h-6M5.5 15a7 7 0 0012 2M18.5 9a7 7 0 00-12-2', 'Movements'],
+    Activity: ['#111827', '#475569', '#a5b4fc', 'M3 12h4l3-8 4 16 3-8h4', 'Movements'],
+    Warehouses: ['#0c1a2b', '#1c5d99', '#6fd0ff', 'M3 21V9l9-6 9 6v12M9 21v-7h6v7', 'Overview']
+  };
+  function head(title, sub) {
+    var t = HX[title];
+    if (!t) return '<h1 class="page-h">' + esc(title) + '</h1><p class="page-s">' + esc(sub) + '</p>';
+    return '<section class="hx" style="--hxa:' + t[0] + ';--hxb:' + t[1] + ';--hxc:' + t[2] + '"><div class="hx-bg" aria-hidden="true"><i></i><i></i><i></i></div>' +
+      '<div class="hx-t"><span class="hx-i"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + t[3] + '"></path></svg></span><div><small>' + esc(NAMEU()) + ' · ' + t[4] + '</small><h1 class="page-h">' + esc(title) + '</h1><p class="page-s">' + esc(sub) + '</p></div></div>' +
+      '<div class="hx-s" id="hxs"></div></section>';
+  }
+  function NAMEU() { return String((window.CFG && window.CFG.appName) || 'GoodsGuru').toUpperCase(); }
+  function hxChips(list) { var el = document.getElementById('hxs'); if (!el) return; el.innerHTML = list.map(function (x) { return '<span class="hx-c"><b>' + esc(x[0]) + '</b>' + esc(x[1]) + '</span>'; }).join(''); }
+  function todayISO() { return new Date().toLocaleDateString('en-CA'); }
   function movesTable(rows) {
     if (!rows.length) return '<div class="empty">Nothing posted yet.</div>';
     return '<div class="tw"><table class="t"><thead><tr><th>Date</th><th>Item</th><th>Where</th><th class="r">Qty</th><th>Ref</th></tr></thead><tbody>' +
@@ -419,6 +439,7 @@
     [['dg', 'grp'], ['dl', 'lvl'], ['dt', 'top']].forEach(function (x) { $('#' + x[0]).onchange = function (e) { S[x[1]] = e.target.value; paint(true); }; });
     $('#dc').onclick = function () { S.grp = ''; $('#dg').value = ''; paint(true); };
     paint(false);
+    hxChips([[String(core.items.length), 'items'], [String(core.wh.length), 'warehouses'], [String(sg.length), 'to reorder']]);
     soft(v, c, 'dashboard');
   };
 
@@ -429,38 +450,27 @@
       var core;
       try { core = await getCore(); } catch (e) { return failed(v, e); }
       var T = {
-        receive: { h: 'Receive', s: 'Book goods in against a PO or invoice. Open indents are matched automatically.', types: ['receipt'], btn: 'Receive stock', fn: 'post_receipt', ic: 'M12 4v12m0 0l-4-4m4 4l4-4M5 20h14', sign: '+' },
-        issue: { h: 'Issue', s: 'Take goods out for a dispatch. The system blocks it if the warehouse does not have enough.', types: ['issue'], btn: 'Issue stock', fn: 'post_issue', ic: 'M12 20V8m0 0l-4 4m4-4l4 4M5 4h14', sign: '-' },
-        transfer: { h: 'Transfer', s: 'Move stock from one warehouse to another in one entry, so nothing goes missing in between.', types: ['transfer_out'], btn: 'Transfer stock', fn: 'post_transfer', ic: 'M7 7h12l-3-3m3 3l-3 3M17 17H5l3-3m-3 3l3 3', sign: '' }
+        receive: { h: 'Receive', s: 'Book goods in against a PO or invoice. Open indents are matched automatically.', types: ['receipt'], btn: 'Receive stock', fn: 'post_receipt' },
+        issue: { h: 'Issue', s: 'Take goods out for a dispatch. The system blocks it if the warehouse does not have enough.', types: ['issue'], btn: 'Issue stock', fn: 'post_issue' },
+        transfer: { h: 'Transfer', s: 'Move stock from one warehouse to another in one entry, so nothing goes missing in between.', types: ['transfer_out'], btn: 'Transfer stock', fn: 'post_transfer' }
       }[kind];
       if (!canPost()) { v.innerHTML = head(T.h, T.s) + '<div class="card2"><p>Your role is view only, so you cannot post stock.</p></div>'; return; }
-      var hby = {}, cmap = {};
-      core.health.forEach(function (h) { hby[h.item_id] = h; });
-      core.items.forEach(function (i) { cmap[i.code] = i; });
-      var fast = core.health.filter(function (h) { return Number(h.avg_daily) > 0; }).sort(function (a, b) { return Number(b.avg_daily) - Number(a.avg_daily); }).slice(0, 8).map(function (h) { return cmap[h.code]; }).filter(Boolean);
       var wopts = core.wh.map(function (w) { return '<option value="' + w.id + '">' + esc(w.code) + ' · ' + esc(w.name) + '</option>'; }).join('');
       var dl = core.items.map(function (i) { return '<option value="' + esc(i.code + ' · ' + i.name) + '"></option>'; }).join('');
-      var qp = fast.length ? '<div class="qpw"><div class="tag">Fast sellers · tap to pick</div><div class="qps">' + fast.map(function (i) {
-        return '<button type="button" class="qp" data-c="' + esc(i.code) + '" title="' + esc(i.name) + '"><span class="qpi" data-th="' + esc(i.id) + '">' + (window.PHOTOS ? window.PHOTOS.inner(i) : '') + '</span><span class="qpn">' + esc(i.name) + '</span></button>';
-      }).join('') + '</div></div>' : '';
-      var whChips = '<div class="fl">Warehouse<div class="wch" id="wch" role="group">' + core.wh.map(function (w, k) {
-        return '<button type="button" class="wc' + (k === 0 ? ' on' : '') + '" data-w="' + w.id + '" title="' + esc(w.name) + '"><b>' + esc(w.code) + '</b><span class="wq"></span></button>';
-      }).join('') + '</div><input type="hidden" id="wh" value="' + (core.wh[0] ? core.wh[0].id : '') + '"></div>';
-      v.innerHTML = '<div class="mh"><span class="mhi"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="' + T.ic + '"/></svg></span><div><h1 class="page-h" style="margin:0">' + esc(T.h) + '</h1><p class="page-s" style="margin:2px 0 0">' + esc(T.s) + '</p></div></div>' +
-        '<div class="cols2"><form class="card2 mf" id="mf" autocomplete="off" novalidate>' + qp +
+      v.innerHTML = head(T.h, T.s) +
+        '<div class="cols2"><form class="card2 mf" id="mf" autocomplete="off" novalidate>' +
         '<label class="fl">Item<input class="inp" id="item" list="dl" placeholder="Type code or name" required></label><datalist id="dl">' + dl + '</datalist>' +
         (kind === 'transfer'
           ? '<div class="two"><label class="fl">From<select class="inp" id="from">' + wopts + '</select></label><label class="fl">To<select class="inp" id="to">' + wopts + '</select></label></div>'
-          : whChips) +
+          : '<label class="fl">Warehouse<select class="inp" id="wh">' + wopts + '</select></label>') +
         '<div class="hint" id="hint">Pick an item to see what is in stock.</div>' +
-        '<div class="fl">Quantity<div class="qrow"><button type="button" class="qs" id="qm" aria-label="Less">−</button><input class="inp" id="qty" type="number" inputmode="decimal" min="0" step="any" placeholder="0" required><button type="button" class="qs" id="qpl" aria-label="More">+</button></div>' +
-        '<div class="qadd" id="qadd"><button type="button" data-a="1">+1</button><button type="button" data-a="5">+5</button><button type="button" data-a="10">+10</button><button type="button" data-a="50">+50</button>' + (kind !== 'receive' ? '<button type="button" data-a="all" class="all">All in stock</button>' : '') + '</div></div>' +
-        '<label class="fl">Date (blank = today)<input class="inp" id="date" type="date"></label>' +
+        '<div class="two"><label class="fl">Quantity<input class="inp" id="qty" type="number" inputmode="decimal" min="0" step="any" placeholder="0" required></label>' +
+        '<label class="fl">Date (blank = today)<input class="inp" id="date" type="date"></label></div>' +
         (kind === 'receive' ? '<div class="two" id="bx"><label class="fl">Batch no.<input class="inp" id="batch"></label><label class="fl">Expiry date<input class="inp" id="exp" type="date"></label></div>' : '') +
         '<label class="fl">' + (kind === 'receive' ? 'PO / invoice no.' : kind === 'issue' ? 'Invoice / dispatch no.' : 'Reference') + '<input class="inp" id="ref"></label>' +
         '<label class="fl">Note<input class="inp" id="note"></label>' +
         '<div class="err2" id="e"></div><button class="b2" id="go" type="submit">' + T.btn + '</button></form>' +
-        '<div class="mside"><section class="card2 icard" id="icard"></section>' +
+        '<div class="rcol"><section class="card2 snap" id="snap"></section>' +
         '<section class="card2"><div class="tag">Last ' + T.h.toLowerCase() + ' entries</div><div id="recent"></div></section></div></div>';
       if (kind === 'transfer' && core.wh.length > 1) $('#to').selectedIndex = 1;
       var map = {};
@@ -471,53 +481,34 @@
         var hit = core.items.filter(function (i) { return i.name.toLowerCase() === t; }); return hit.length === 1 ? hit[0] : null;
       }
       function balOf(item, wh) { var r = core.bal.filter(function (b) { return b.item_id === item && b.warehouse_id === wh; })[0]; return r ? Number(r.qty) : 0; }
-      function curWh() { return kind === 'transfer' ? $('#from').value : $('#wh').value; }
-      function card() {
-        var it = pick(), el = $('#icard');
-        if (!it) {
-          el.innerHTML = '<div class="iph"><span class="iphi"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8"/></svg></span><b>No item picked yet</b><span class="mu">Tap a fast seller, or type a code or name. Its photo, stock in every warehouse and days of cover show up here.</span></div>';
-          return;
-        }
-        var h = hby[it.id], w0 = curWh(), tot = h ? Number(h.stock) : 0;
-        el.innerHTML = '<div class="ipc"><span class="ipcp" data-th="' + esc(it.id) + '">' + (window.PHOTOS ? window.PHOTOS.inner(it) : '') + '</span><div class="ipct"><b class="ipcn">' + esc(it.name) + '</b><span class="mu">' + esc(it.code) + (it.group_name ? ' · ' + esc(it.group_name) : '') + '</span>' +
-          '<div class="ipcb">' + (h ? cover(h) + ' ' + chip(h.band) : '') + '</div>' +
-          '<div class="ipcs"><b>' + num(tot) + '</b> <span class="mu">' + esc(it.unit) + ' in all warehouses</span>' + (h && Number(h.avg_daily) > 0 ? '<br><span class="mu">sells about ' + num(Math.round(Number(h.avg_daily) * 10) / 10) + ' per day</span>' : '') + '</div></div></div>' +
-          '<div class="ipw">' + core.wh.map(function (w) { var q = balOf(it.id, w.id); return '<div class="' + (w.id === w0 ? 'on ' : '') + (q < 0 ? 'neg' : q === 0 ? 'zero' : '') + '"><i>' + esc(w.code) + '</i><b>' + num(q) + '</b></div>'; }).join('') + '</div>';
-      }
-      function chipsq() {
-        var it = pick();
-        $$('#wch .wc').forEach(function (b) { var q = it ? balOf(it.id, b.getAttribute('data-w')) : null; b.querySelector('.wq').textContent = q == null ? '' : num(q); });
+      var SNAPTIP = { receive: 'Pick an item and its live stock, selling speed and warehouse split show up here, so you can check before booking in.', issue: 'Pick an item to see how much each warehouse can actually give out before you dispatch.', transfer: 'Pick an item to see where stock sits today and which warehouse can spare it.' }[kind];
+      function snap(it) {
+        var el = $('#snap'); if (!el) return;
+        if (!it) { el.innerHTML = '<div class="snap-e"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7l9-4 9 4-9 4zM3 7v10l9 4 9-4V7M12 11v10"></path></svg><b>Item snapshot</b><p>' + esc(SNAPTIP) + '</p></div>'; return; }
+        var h = core.health.filter(function (x) { return x.item_id === it.id; })[0] || {};
+        var tot = 0, rows = core.wh.map(function (w) { var q = balOf(it.id, w.id); tot += q; return [w, q]; });
+        var mx = Math.max.apply(null, rows.map(function (r) { return Math.abs(r[1]); }).concat([1]));
+        el.innerHTML = '<div class="snap-h"><span class="th big" data-th="' + esc(it.id) + '">' + (window.PHOTOS ? window.PHOTOS.inner(it) : '') + '</span><div><b>' + esc(it.code) + '</b><span class="mu">' + esc(it.name) + '</span><div class="snap-p">' + (h.band ? chip(h.band) : '') + (h.avg_daily != null ? cover(h) : '') + '</div></div></div>' +
+          '<div class="snap-k"><div><small>In stock</small><b>' + num(tot) + '</b><em>' + esc(it.unit) + '</em></div><div><small>Sells / day</small><b>' + num(Math.round(Number(h.avg_daily) || 0)) + '</b></div><div><small>Max level</small><b>' + num(h.max_level) + '</b></div></div>' +
+          '<div class="snap-w">' + rows.map(function (r) { return '<div class="sw"><span>' + esc(r[0].code) + '</span><div class="sbar"><i style="width:' + Math.max(0, Math.min(100, r[1] / mx * 100)) + '%"></i></div><b>' + num(r[1]) + '</b></div>'; }).join('') + '</div>';
       }
       function hint() {
-        var it = pick(), el = $('#hint');
-        card(); chipsq();
+        var it = pick(), el = $('#hint'); snap(it);
         if (!it) { el.textContent = 'Pick an item to see what is in stock.'; el.className = 'hint'; if ($('#bx')) $('#bx').style.display = ''; return; }
-        var b = balOf(it.id, curWh()), q = Number($('#qty').value) || 0, short = kind !== 'receive' && q > b;
-        el.innerHTML = short ? 'Only <b>' + num(b) + '</b> ' + esc(it.unit) + ' in stock here, you typed ' + num(q) + '.' : 'In stock here: <b>' + num(b) + '</b> ' + esc(it.unit) + (it.track_batch && kind === 'receive' ? ' · this item is batch tracked, fill batch and expiry' : '');
-        el.className = 'hint' + ((b <= 0 || short) && kind !== 'receive' ? ' warn' : '');
+        var w = kind === 'transfer' ? $('#from').value : $('#wh').value, b = balOf(it.id, w);
+        el.innerHTML = 'In stock here: <b>' + num(b) + '</b> ' + esc(it.unit) + (it.track_batch && kind === 'receive' ? ' · this item is batch tracked, fill batch and expiry' : '');
+        el.className = 'hint' + (b <= 0 && kind !== 'receive' ? ' warn' : '');
       }
-      function setItem(it) { $('#item').value = it.code + ' · ' + it.name; hint(); $('#qty').focus(); }
-      function recentRows(rows, fresh) {
-        if (!rows.length) return '<div class="rempty"><span><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span><b>Nothing posted yet</b><span class="mu">Entries you save here will show up in this list.</span></div>';
-        return '<div class="rl">' + rows.map(function (m, k) {
-          var q = Number(m.qty), it = m.items && cmap[m.items.code];
-          return '<div class="rr' + (fresh && k === 0 ? ' newrow' : '') + '"><span class="th">' + (it && window.PHOTOS ? window.PHOTOS.inner(it) : '') + '</span><div class="rn"><b>' + esc(m.items && m.items.name) + '</b><span class="mu">' + esc(m.items && m.items.code) + ' · ' + esc(m.warehouses && m.warehouses.code) + ' · ' + esc(fmtDate(m.occurred_on)) + (m.ref_no ? ' · ' + esc(m.ref_no) : '') + '</span></div><div class="rq ' + (q < 0 ? 'neg' : 'pos') + '">' + (q > 0 ? '+' : '') + num(q) + '<small>' + esc(m.items && m.items.unit) + '</small></div></div>';
-        }).join('') + '</div>';
-      }
-      async function recent(fresh) {
-        try { $('#recent').innerHTML = recentRows(await D.moves(T.types, 8), fresh); } catch (e) { $('#recent').innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; }
+      async function recent() {
+        try {
+          var rows = await D.moves(T.types, 60), td = todayISO(), tr = rows.filter(function (m) { return String(m.occurred_on).slice(0, 10) === td; });
+          var u = tr.reduce(function (a, m) { return a + Math.abs(Number(m.qty)); }, 0), sk = {}; tr.forEach(function (m) { sk[m.items && m.items.code] = 1; });
+          hxChips([[String(tr.length), 'entries today'], [num(u), 'units today'], [String(Object.keys(sk).length), 'items touched']]);
+          $('#recent').innerHTML = movesTable(rows.slice(0, 8));
+        } catch (e) { $('#recent').innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; }
       }
       $('#item').oninput = hint; $('#item').onchange = hint;
-      $('#qty').oninput = hint;
-      ['#from'].forEach(function (s) { if ($(s)) $(s).onchange = hint; });
-      if ($('#wch')) $('#wch').onclick = function (e) { var b = e.target.closest('.wc'); if (!b) return; $$('#wch .wc').forEach(function (x) { x.classList.toggle('on', x === b); }); $('#wh').value = b.getAttribute('data-w'); hint(); };
-      $$('.qp', v).forEach(function (b) { b.onclick = function () { setItem(cmap[b.getAttribute('data-c')]); }; });
-      function bump(d) { var n = Number($('#qty').value) || 0; n = Math.max(0, Math.round((n + d) * 1000) / 1000); $('#qty').value = n || ''; hint(); }
-      $('#qm').onclick = function () { bump(-1); }; $('#qpl').onclick = function () { bump(1); };
-      $('#qadd').onclick = function (e) {
-        var b = e.target.closest('[data-a]'); if (!b) return; var a = b.getAttribute('data-a');
-        if (a === 'all') { var it = pick(); if (!it) { $('#e').textContent = 'Pick an item first.'; return; } $('#e').textContent = ''; $('#qty').value = Math.max(0, balOf(it.id, curWh())) || ''; hint(); } else bump(Number(a));
-      };
+      ['#wh', '#from'].forEach(function (s) { if ($(s)) $(s).onchange = hint; });
       $('#mf').onsubmit = async function (e) {
         e.preventDefault();
         var err = $('#e'), it = pick(), q = Number($('#qty').value);
@@ -538,17 +529,72 @@
           await D.post(T.fn, a);
           c.say(T.h + ' saved: ' + num(q) + ' ' + it.unit + ' of ' + it.code);
           dirty(); core = await getCore(true);
-          core.health.forEach(function (h) { hby[h.item_id] = h; });
-          var keep = $('#item').value; $('#qty').value = ''; $('#ref').value = ''; $('#note').value = '';
+          $('#item').value = ''; $('#qty').value = ''; $('#ref').value = ''; $('#note').value = '';
           if ($('#batch')) { $('#batch').value = ''; $('#exp').value = ''; }
-          $('#item').value = ''; hint(); recent(true); $('#item').focus();
+          hint(); recent(); $('#item').focus();
         } catch (x) { err.textContent = errMsg(x); }
         btn.disabled = false; btn.textContent = T.btn;
       };
-      card(); recent(); $('#item').focus();
+      snap(null); recent(); $('#item').focus();
     };
   }
   P.receive = moveForm('receive'); P.issue = moveForm('issue'); P.transfer = moveForm('transfer');
+
+  /* ---------- ACTIVITY (full history) ---------- */
+  P.activity = async function (v, c) {
+    ctx = c; D = c.demo ? demo : real; loading(v);
+    var core, rows;
+    try { var rr = await Promise.all([getCore(), D.moves(['receipt', 'issue', 'transfer_out', 'count_adjust', 'opening'], 500)]); core = rr[0]; rows = rr[1]; } catch (e) { return failed(v, e); }
+    var TY = [['', 'All types'], ['receipt', 'Received'], ['issue', 'Issued'], ['transfer_out', 'Transferred'], ['count_adjust', 'Count adjust'], ['opening', 'Opening']];
+    var st = { ty: '', wh: '', q: '' };
+    v.innerHTML = head('Activity', 'Every stock movement in one place. Nothing here can be edited, which is what keeps the numbers trustworthy.') +
+      '<div class="fbar">' + sel('ay', TY, '', 'Type') + sel('aw', [['', 'All warehouses']].concat(core.wh.map(function (w) { return [w.code, w.code + ' · ' + w.name]; })), '', 'Warehouse') +
+      '<input class="inp sm" id="aq" type="search" placeholder="Search item or reference" autocomplete="off"><button type="button" class="lnk" id="acsv">Download CSV</button></div><div class="card2 flush" id="abody"></div>';
+    function list() {
+      var s = st.q.toLowerCase();
+      return rows.filter(function (m) { return (!st.ty || m.move_type === st.ty) && (!st.wh || (m.warehouses && m.warehouses.code) === st.wh) && (!s || ((m.items && m.items.code) + ' ' + (m.items && m.items.name) + ' ' + (m.ref_no || '')).toLowerCase().indexOf(s) >= 0); });
+    }
+    function paint() {
+      var L = list(), inn = 0, out = 0; L.forEach(function (m) { var q = Number(m.qty); if (q > 0) inn += q; else out += -q; });
+      hxChips([[String(L.length), 'entries'], [num(inn), 'units in'], [num(out), 'units out']]);
+      $('#abody').innerHTML = movesTable(L.slice(0, 300)); fx($('#abody'), 'fx2');
+    }
+    $('#ay').onchange = function (e) { st.ty = e.target.value; paint(); };
+    $('#aw').onchange = function (e) { st.wh = e.target.value; paint(); };
+    $('#aq').oninput = function (e) { st.q = e.target.value; paint(); };
+    $('#acsv').onclick = function () {
+      var out = 'Date,Code,Item,Warehouse,Type,Qty,Reference\n' + list().map(function (m) { return [String(m.occurred_on).slice(0, 10), m.items && m.items.code, '"' + String(m.items && m.items.name || '').replace(/"/g, '""') + '"', m.warehouses && m.warehouses.code, m.move_type, m.qty, '"' + String(m.ref_no || '').replace(/"/g, '""') + '"'].join(','); }).join('\n');
+      var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([out], { type: 'text/csv' })); a.download = 'goodsguru_activity.csv'; a.click();
+    };
+    paint();
+  };
+
+  /* ---------- WAREHOUSES ---------- */
+  P.warehouses = async function (v, c) {
+    ctx = c; D = c.demo ? demo : real; loading(v);
+    var core;
+    try { core = await getCore(); } catch (e) { return failed(v, e); }
+    var H = {}; core.health.forEach(function (h) { H[h.item_id] = h; });
+    var iby = {}; core.items.forEach(function (i) { iby[i.id] = i; });
+    var tot = 0;
+    var cards = core.wh.map(function (w) {
+      var rows = core.bal.filter(function (b) { return b.warehouse_id === w.id; }), n = 0, units = 0, low = 0;
+      var top = rows.filter(function (b) { return Number(b.qty) > 0 && iby[b.item_id]; }).sort(function (a, b) { return Number(b.qty) - Number(a.qty); });
+      top.forEach(function (b) { n++; units += Number(b.qty); var h = H[b.item_id]; if (h && (h.band === 'critical' || h.band === 'low')) low++; });
+      tot += units;
+      return { w: w, n: n, units: units, low: low, top: top.slice(0, 5) };
+    });
+    v.innerHTML = head('Warehouses', 'See each location side by side: how many items are on the shelf, how many units, and what holds the most.') +
+      '<div class="wgrid">' + cards.map(function (x, k) {
+        var pct = tot ? Math.round(x.units / tot * 100) : 0;
+        return '<section class="card2 wc" style="--i:' + k + '"><div class="wc-h"><span class="wc-c">' + esc(x.w.code) + '</span><div><b>' + esc(x.w.name) + '</b><small>' + esc(x.w.kind || 'warehouse') + '</small></div></div>' +
+          '<div class="wc-k"><div><small>Items</small><b>' + num(x.n) + '</b></div><div><small>Units</small><b>' + num(x.units) + '</b></div><div><small>Low / critical</small><b>' + num(x.low) + '</b></div></div>' +
+          '<div class="wc-s"><span>' + pct + '% of all units</span><div class="sbar"><i style="width:' + pct + '%"></i></div></div>' +
+          '<div class="tag" style="margin-top:14px">Most stocked</div>' + (x.top.length ? x.top.map(function (b) { var it = iby[b.item_id]; return '<div class="wc-r"><span class="th" data-th="' + esc(it.id) + '">' + (window.PHOTOS ? window.PHOTOS.inner(it) : '') + '</span><span class="wc-n"><b>' + esc(it.code) + '</b> <span class="mu">' + esc(it.name) + '</span></span><b>' + num(b.qty) + '</b></div>'; }).join('') : '<div class="empty">Nothing on the shelf.</div>') + '</section>';
+      }).join('') + '</div>';
+    hxChips([[String(core.wh.length), 'locations'], [num(tot), 'units in total']]);
+    soft(v, c, 'warehouses');
+  };
 
   /* ---------- COUNT ---------- */
   P.count = async function (v, c) {
