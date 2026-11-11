@@ -158,12 +158,15 @@
 
   /* ---------- realistic material effect around the panel, chosen by what the product is ---------- */
   var THEMES = [
-    ['frost', /ice ?cream|cone|kulfi|sundae|gelato|\bmf\b|\btub\b|brooklyn|\btbc\b|popsicle|frozen|\bcup\b|sorbet/],
+    ['flour', /\batta\b|flour|maida|besan|sooji|suji|\brava\b|dalia|wheat|multigrain|ragi|bajra/],
     ['fire', /noodle|ramen|thukpa|khow|manchurian|chill?i|spicy|peri|tikka|masala|biryani|momo|schezwan|szechuan|jalape|nugget|chicken|burger|pizza|patty|kebab|korean|curry|hot\b/],
-    ['water', /water|juice|drink|coconut|shake|lassi|soda|cola|beverage|milk|syrup|squash|lemon|orange|mango/],
+    ['frost', /ice ?cream|cone|kulfi|sundae|gelato|\bmf\b|\btub\b|brooklyn|\btbc\b|popsicle|sorbet/],
+    ['splash', /juice|fruit|berry|berries|mango|orange|cherry|strawberr|blueberr|apple|grape|pomegranate|guava|pineapple|litchi|lychee|lemon|peach|drink|squash|shake|mojito/],
+    ['frost', /frozen|\bcup\b/],
+    ['water', /water|milk|cola|soda|lassi|beverage|syrup|coconut/],
     ['choco', /choco|cocoa|brownie|cookie|biscuit|cake|truffle|mocha|coffee|caramel|nutella|hazelnut/],
     ['gold', /chips|crisps|potato|bites|snack|stick|namkeen|popcorn|nacho|puff|crunch|fries|cracker|bhujia/],
-    ['leaf', /veg|fresh|organic|salad|mint|fruit|berry|berries|green|herb|paneer|spinach|corn|pea\b|paper|bag/]
+    ['leaf', /veg|fresh|organic|salad|mint|green|herb|paneer|spinach|corn|pea\b|paper|bag|leaf|coriander|cabbage/]
   ];
   function themeOf(it) {
     var n = (String(it.name || '') + ' ' + String(it.group_name || '')).toLowerCase();
@@ -185,6 +188,7 @@
     for (var k = 0; k < n; k++) h += '<i style="--x:' + (r() * 96 + 2).toFixed(1) + '%;--s:' + (t === 'water' ? 6 + r() * 14 : t === 'fire' ? 1.5 + r() * 1.5 : t === 'frost' ? 1.5 + r() * 3 : 4 + r() * 6).toFixed(1) + 'px;--d:' + (-r() * 12).toFixed(2) + 's;--t:' + (t === 'fire' ? 2.2 + r() * 2 : 7 + r() * 9).toFixed(2) + 's;--dx:' + ((r() - .5) * 70).toFixed(0) + 'px;--o:' + (.35 + r() * .5).toFixed(2) + '"></i>';
     el.className = 'ip-fx t-' + t;
     el.innerHTML = '<span class="fx-ring"></span><span class="fx-a"></span><span class="fx-b"></span><span class="fx-c"></span>' + h;
+    if (window.FX) { try { window.FX.play(el, t, it.name); } catch (e) { if (window.console) console.warn(e); } } 
   }
   function render(it) {
     setFx(it);

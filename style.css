@@ -779,3 +779,7 @@ a.nv.on::before { content: ""; position: absolute; left: -14px; top: 10px; botto
 .t-plain .fx-ring { inset: 0; box-shadow: inset 0 0 0 3px #d7deea, inset 0 0 26px rgba(120,140,190,.18); }
 .t-plain .fx-a { top: 0; bottom: 0; width: 36%; left: 0; background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.7) 50%, transparent 70%); animation: fxsweep 5.5s ease-in-out infinite; mix-blend-mode: soft-light; }
 @media (prefers-reduced-motion: reduce) { .ip-fx *, .ip-fx { animation: none !important; } }
+
+/* canvas effects replace the CSS layers when they start */
+.ip-fx .fxc { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.ip-fx.has-c > span, .ip-fx.has-c > i { display: none; }
