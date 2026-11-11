@@ -156,11 +156,11 @@
     } catch (x) { if (box) box.innerHTML = '<div class="empty sm">' + esc(errMsg(x)) + '</div>'; }
   };
 
-  /* ---------- border + particle effect that matches what the product is ---------- */
+  /* ---------- realistic material effect around the panel, chosen by what the product is ---------- */
   var THEMES = [
     ['frost', /ice ?cream|cone|kulfi|sundae|gelato|\bmf\b|\btub\b|brooklyn|\btbc\b|popsicle|frozen|\bcup\b|sorbet/],
     ['fire', /noodle|ramen|thukpa|khow|manchurian|chill?i|spicy|peri|tikka|masala|biryani|momo|schezwan|szechuan|jalape|nugget|chicken|burger|pizza|patty|kebab|korean|curry|hot\b/],
-    ['bubble', /water|juice|drink|coconut|shake|lassi|soda|cola|beverage|milk|syrup|squash|lemon|orange|mango/],
+    ['water', /water|juice|drink|coconut|shake|lassi|soda|cola|beverage|milk|syrup|squash|lemon|orange|mango/],
     ['choco', /choco|cocoa|brownie|cookie|biscuit|cake|truffle|mocha|coffee|caramel|nutella|hazelnut/],
     ['gold', /chips|crisps|potato|bites|snack|stick|namkeen|popcorn|nacho|puff|crunch|fries|cracker|bhujia/],
     ['leaf', /veg|fresh|organic|salad|mint|fruit|berry|berries|green|herb|paneer|spinach|corn|pea\b|paper|bag/]
@@ -168,18 +168,23 @@
   function themeOf(it) {
     var n = (String(it.name || '') + ' ' + String(it.group_name || '')).toLowerCase();
     for (var i = 0; i < THEMES.length; i++) if (THEMES[i][1].test(n)) return THEMES[i][0];
-    return 'spark';
+    return 'plain';
   }
-  var PCOUNT = { fire: 22, frost: 30, bubble: 20, choco: 18, gold: 22, leaf: 14, spark: 16 };
+  var SVGF = '<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>' +
+    '<filter id="fxF1" x="-10%" y="-30%" width="120%" height="160%"><feTurbulence type="fractalNoise" baseFrequency="0.018 0.045" numOctaves="3" seed="4" result="n"><animate attributeName="baseFrequency" dur="2.4s" values="0.018 0.045;0.022 0.062;0.016 0.04;0.018 0.045" repeatCount="indefinite"/></feTurbulence><feDisplacementMap in="SourceGraphic" in2="n" scale="46" xChannelSelector="R" yChannelSelector="G"/></filter>' +
+    '<filter id="fxF2" x="-10%" y="-30%" width="120%" height="160%"><feTurbulence type="fractalNoise" baseFrequency="0.03 0.07" numOctaves="2" seed="9" result="n"><animate attributeName="baseFrequency" dur="1.7s" values="0.03 0.07;0.04 0.095;0.028 0.066;0.03 0.07" repeatCount="indefinite"/></feTurbulence><feDisplacementMap in="SourceGraphic" in2="n" scale="34" xChannelSelector="R" yChannelSelector="G"/></filter>' +
+    '<filter id="fxFr" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="4" seed="2"/><feColorMatrix values="0 0 0 0 0.93  0 0 0 0 0.98  0 0 0 0 1  0 0 0 9 -4.2"/></filter>' +
+    '<filter id="fxFr2" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.012 0.02" numOctaves="3" seed="7"/><feColorMatrix values="0 0 0 0 0.8  0 0 0 0 0.93  0 0 0 0 1  0 0 0 5 -2.2"/></filter>' +
+    '<filter id="fxW" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.012 0.02" numOctaves="2" seed="5"><animate attributeName="baseFrequency" dur="9s" values="0.012 0.02;0.02 0.014;0.012 0.02" repeatCount="indefinite"/></feTurbulence><feColorMatrix values="0 0 0 0 0.75  0 0 0 0 0.95  0 0 0 0 1  0 0 0 9 -4.6"/></filter>' +
+    '</defs></svg>';
+  var PN = { fire: 7, frost: 16, water: 9, choco: 0, gold: 8, leaf: 6, plain: 0 };
   function setFx(it) {
     var el = panel && panel.querySelector('.ip-fx'); if (!el) return;
-    var t = themeOf(it), n = PCOUNT[t], h = '';
-    for (var k = 0; k < n; k++) {
-      var r = function () { return Math.random(); };
-      h += '<i style="--x:' + (r() * 100).toFixed(1) + '%;--s:' + (3 + r() * 7).toFixed(1) + 'px;--d:' + (-r() * 9).toFixed(2) + 's;--t:' + (4 + r() * 6).toFixed(2) + 's;--dx:' + ((r() - .5) * 60).toFixed(0) + 'px"></i>';
-    }
+    if (!document.getElementById('fxsvg')) { var d = document.createElement('div'); d.id = 'fxsvg'; d.innerHTML = SVGF; document.body.appendChild(d); }
+    var t = themeOf(it), n = PN[t] || 0, h = '', r = Math.random;
+    for (var k = 0; k < n; k++) h += '<i style="--x:' + (r() * 96 + 2).toFixed(1) + '%;--s:' + (t === 'water' ? 6 + r() * 14 : t === 'fire' ? 1.5 + r() * 1.5 : t === 'frost' ? 1.5 + r() * 3 : 4 + r() * 6).toFixed(1) + 'px;--d:' + (-r() * 12).toFixed(2) + 's;--t:' + (t === 'fire' ? 2.2 + r() * 2 : 7 + r() * 9).toFixed(2) + 's;--dx:' + ((r() - .5) * 70).toFixed(0) + 'px;--o:' + (.35 + r() * .5).toFixed(2) + '"></i>';
     el.className = 'ip-fx t-' + t;
-    el.innerHTML = '<span class="ip-glow"></span>' + h;
+    el.innerHTML = '<span class="fx-ring"></span><span class="fx-a"></span><span class="fx-b"></span><span class="fx-c"></span>' + h;
   }
   function render(it) {
     setFx(it);

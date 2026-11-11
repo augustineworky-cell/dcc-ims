@@ -730,42 +730,52 @@ a.nv.on::before { content: ""; position: absolute; left: -14px; top: 10px; botto
 @media (prefers-reduced-motion: reduce) { .hx-track { animation: none; } }
 
 
-/* v18: item panel border + particles that match the product */
-@property --ang { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
-@keyframes ipang { to { --ang: 360deg; } }
-.ip-fx { position: absolute; top: 0; right: 0; bottom: 0; width: min(440px, 100%); pointer-events: none; z-index: 4; overflow: hidden; --c1: #7c8cff; --c2: #35d0a8; --c3: #ffb468; }
-.ip-fx::before { content: ""; position: absolute; inset: 0; padding: 4px; background: conic-gradient(from var(--ang), var(--c1), var(--c2), var(--c3), var(--c1)); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); animation: ipang 3.2s linear infinite; }
-.ip-glow { position: absolute; inset: 0; box-shadow: inset 0 0 46px -6px var(--c1), inset 0 0 90px -30px var(--c3); opacity: .55; animation: ipglow 2.6s ease-in-out infinite alternate; }
-@keyframes ipglow { from { opacity: .35; } to { opacity: .75; } }
-.ip-fx i { position: absolute; left: var(--x); width: var(--s); height: var(--s); border-radius: 50%; opacity: 0; background: var(--c3); box-shadow: 0 0 8px 1px var(--c3); animation: iprise var(--t) linear var(--d) infinite; }
-@keyframes iprise { 0% { transform: translate(0, 0) scale(1); opacity: 0; } 12% { opacity: .95; } 100% { transform: translate(var(--dx), -105vh) scale(.3); opacity: 0; } }
-@keyframes ipfall { 0% { transform: translate(0, -20px) rotate(0); opacity: 0; } 12% { opacity: .95; } 100% { transform: translate(var(--dx), 105vh) rotate(360deg); opacity: 0; } }
-@keyframes iptw { 0%, 100% { transform: scale(.2); opacity: 0; } 50% { transform: scale(1); opacity: 1; } }
+/* v18: realistic material effects around the item panel (fire, frost, water, chocolate, crunch, leaves) */
+.ip-fx { position: absolute; top: 0; right: 0; bottom: 0; width: min(440px, 100%); pointer-events: none; z-index: 4; overflow: hidden; }
+.ip-fx > span { position: absolute; display: block; }
+.ip-fx i { position: absolute; display: block; left: var(--x); width: var(--s); height: var(--s); opacity: 0; }
+@keyframes fxrise { 0% { transform: translate3d(0, 0, 0); opacity: 0; } 10% { opacity: var(--o, .8); } 100% { transform: translate3d(var(--dx), -105vh, 0); opacity: 0; } }
+@keyframes fxfall { 0% { transform: translate3d(0, 0, 0) rotate(0); opacity: 0; } 10% { opacity: var(--o, .8); } 100% { transform: translate3d(var(--dx), 108vh, 0) rotate(300deg); opacity: 0; } }
+@keyframes fxflick { 0%, 100% { opacity: .9; } 18% { opacity: .62; } 33% { opacity: 1; } 51% { opacity: .7; } 72% { opacity: .95; } 86% { opacity: .66; } }
+@keyframes fxsweep { from { transform: translateX(-130%) skewX(-18deg); } to { transform: translateX(330%) skewX(-18deg); } }
+@keyframes fxdrift { from { transform: translateX(-8%); } to { transform: translateX(8%); } }
 
-/* fire: flames along the bottom edge, embers rising */
-.t-fire { --c1: #ff2d00; --c2: #ff9500; --c3: #ffd000; }
-.t-fire::before { animation-duration: 1.6s; }
-.t-fire i { bottom: -12px; background: radial-gradient(circle, #fff3a0, #ff9500 55%, #ff2d00); box-shadow: 0 0 10px 2px rgba(255,120,0,.8); }
-.t-fire::after { content: ""; position: absolute; left: -10%; right: -10%; bottom: -30px; height: 150px; background: radial-gradient(60% 100% at 20% 100%, #ff9500, transparent 70%), radial-gradient(55% 100% at 55% 100%, #ff2d00, transparent 70%), radial-gradient(50% 90% at 85% 100%, #ffd000, transparent 70%); filter: blur(14px); opacity: .75; animation: ipflame .55s ease-in-out infinite alternate; }
-@keyframes ipflame { from { transform: scaleY(.8) translateX(-6px); opacity: .6; } to { transform: scaleY(1.2) translateX(6px); opacity: .9; } }
-/* frost: icy edge, snow falling */
-.t-frost { --c1: #bfe9ff; --c2: #5bb8ff; --c3: #ffffff; }
-.t-frost::before { animation-duration: 5s; }
-.t-frost i { top: -12px; background: #fff; box-shadow: 0 0 8px 2px rgba(150,215,255,.9); animation-name: ipfall; }
-.t-frost::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 120px; background: linear-gradient(180deg, rgba(190,233,255,.55), transparent); }
-/* bubbles */
-.t-bubble { --c1: #36c6ff; --c2: #3ddcb9; --c3: #c9f2ff; }
-.t-bubble i { bottom: -14px; background: rgba(255,255,255,.18); border: 1.5px solid rgba(120,215,255,.95); box-shadow: inset 0 0 4px rgba(255,255,255,.8); }
-/* chocolate */
-.t-choco { --c1: #7b3f1d; --c2: #d4a24c; --c3: #fff2c9; }
-.t-choco::before { animation-duration: 4.5s; }
-.t-choco i { top: 8%; bottom: auto; animation-name: iptw; animation-duration: calc(var(--t) / 2); background: #ffe29a; box-shadow: 0 0 9px 2px rgba(212,162,76,.9); top: calc(var(--x) * .9 + 4%); }
-/* golden crunch */
-.t-gold { --c1: #f5c542; --c2: #ffe59a; --c3: #e08a00; }
-.t-gold i { top: -12px; border-radius: 2px; background: #f5c542; box-shadow: none; animation-name: ipfall; }
-/* fresh leaves */
-.t-leaf { --c1: #22a65a; --c2: #9be36d; --c3: #0f7b4a; }
-.t-leaf i { top: -14px; width: calc(var(--s) * 1.8); height: calc(var(--s) * 1.8); border-radius: 0 100% 0 100%; background: #35c26f; box-shadow: none; animation-name: ipfall; animation-duration: calc(var(--t) * 1.4); }
-/* default sparkle */
-.t-spark i { top: calc(var(--x) * .95 + 2%); animation-name: iptw; animation-duration: calc(var(--t) / 2); }
-@media (prefers-reduced-motion: reduce) { .ip-fx i, .ip-fx::before, .ip-fx::after, .ip-glow { animation: none !important; } }
+/* FIRE: displaced flame tongues rising from the bottom edge, a warm light cast up the sides, a few fine sparks */
+.t-fire .fx-ring { inset: 0; border-radius: 0; box-shadow: inset 0 -90px 70px -50px rgba(255,92,0,.55), inset 7px 0 18px -6px rgba(255,120,0,.55), inset -7px 0 18px -6px rgba(255,120,0,.45); animation: fxflick 1.9s linear infinite; }
+.t-fire .fx-a { left: -4%; right: -4%; bottom: -14px; height: 190px; background: radial-gradient(ellipse 9% 92% at 6% 100%, #ff3a00 0%, rgba(255,90,0,.85) 38%, rgba(255,150,0,.0) 100%),radial-gradient(ellipse 8% 70% at 16% 100%, #ff4a00 0%, rgba(255,90,0,.85) 38%, rgba(255,150,0,.0) 100%),radial-gradient(ellipse 10% 100% at 27% 100%, #ff3a00 0%, rgba(255,90,0,.85) 38%, rgba(255,150,0,.0) 100%),radial-gradient(ellipse 8% 76% at 38% 100%, #ff5a00 0%, rgba(255,90,0,.85) 38%, rgba(255,150,0,.0) 100%),radial-gradient(ellipse 11% 96% at 49% 100%, #ff3a00 0%, rgba(255,90,0,.85) 38%, rgba(255,150,0,.0) 100%),radial-gradient(ellipse 8% 72% at 60% 100%, #ff4a00 0%, rgba(255,90,0,.85) 38%, rgba(255,150,0,.0) 100%),radial-gradient(ellipse 10% 98% at 71% 100%, #ff3a00 0%, rgba(255,90,0,.85) 38%, rgba(255,150,0,.0) 100%),radial-gradient(ellipse 8% 78% at 82% 100%, #ff5a00 0%, rgba(255,90,0,.85) 38%, rgba(255,150,0,.0) 100%),radial-gradient(ellipse 9% 90% at 93% 100%, #ff3a00 0%, rgba(255,90,0,.85) 38%, rgba(255,150,0,.0) 100%); filter: url(#fxF1); animation: fxflick 1.3s linear infinite; }
+.t-fire .fx-b { left: -2%; right: -2%; bottom: -16px; height: 120px; background: radial-gradient(ellipse 7% 60% at 11% 100%, #ffc400 0%, rgba(255,90,0,.85) 38%, rgba(255,150,0,.0) 100%),radial-gradient(ellipse 7% 78% at 22% 100%, #ffb300 0%, rgba(255,90,0,.85) 38%, rgba(255,150,0,.0) 100%),radial-gradient(ellipse 6% 56% at 33% 100%, #ffc400 0%, rgba(255,90,0,.85) 38%, rgba(255,150,0,.0) 100%),radial-gradient(ellipse 8% 80% at 44% 100%, #ffb300 0%, rgba(255,90,0,.85) 38%, rgba(255,150,0,.0) 100%),radial-gradient(ellipse 6% 58% at 55% 100%, #ffc400 0%, rgba(255,90,0,.85) 38%, rgba(255,150,0,.0) 100%),radial-gradient(ellipse 8% 76% at 66% 100%, #ffb300 0%, rgba(255,90,0,.85) 38%, rgba(255,150,0,.0) 100%),radial-gradient(ellipse 6% 54% at 77% 100%, #ffc400 0%, rgba(255,90,0,.85) 38%, rgba(255,150,0,.0) 100%),radial-gradient(ellipse 7% 70% at 88% 100%, #ffb300 0%, rgba(255,90,0,.85) 38%, rgba(255,150,0,.0) 100%), linear-gradient(to top, #fff6c0, rgba(255,230,120,0) 60%); filter: url(#fxF2); animation: fxflick .9s linear infinite reverse; }
+.t-fire .fx-c { left: 0; right: 0; bottom: 0; height: 240px; background: radial-gradient(70% 100% at 50% 100%, rgba(255,110,0,.28), transparent 70%); animation: fxflick 2.4s linear infinite; }
+.t-fire i { bottom: 10px; border-radius: 50%; background: #ffcf5a; box-shadow: 0 0 4px 1px rgba(255,140,0,.9); animation: fxrise var(--t) ease-out var(--d) infinite; }
+
+/* FROST: frost crystals creeping in from the edges like a window, cold mist, fine snow */
+.t-frost .fx-ring { inset: 0; box-shadow: inset 0 0 26px 4px rgba(214,240,255,.95), inset 0 0 2px 1px #fff; }
+.t-frost .fx-a { inset: 0; background: #fff; filter: url(#fxFr); -webkit-mask-image: radial-gradient(130% 110% at 50% 50%, transparent 56%, #000 100%); mask-image: radial-gradient(130% 110% at 50% 50%, transparent 56%, #000 100%); opacity: .95; }
+.t-frost .fx-b { inset: 0; background: #fff; filter: url(#fxFr2); -webkit-mask-image: radial-gradient(120% 100% at 50% 50%, transparent 40%, #000 100%); mask-image: radial-gradient(120% 100% at 50% 50%, transparent 40%, #000 100%); opacity: .8; }
+.t-frost .fx-c { left: -20%; right: -20%; top: 0; height: 160px; background: radial-gradient(50% 100% at 30% 0, rgba(210,238,255,.75), transparent 70%), radial-gradient(45% 100% at 78% 0, rgba(235,248,255,.7), transparent 70%); filter: blur(10px); animation: fxdrift 9s ease-in-out infinite alternate; }
+.t-frost i { top: -8px; border-radius: 50%; background: #fff; filter: blur(.4px); box-shadow: 0 0 3px rgba(160,210,245,.9); animation: fxfall var(--t) linear var(--d) infinite; }
+
+/* WATER: slow caustic light from above, clean thin-ringed bubbles rising */
+.t-water .fx-ring { inset: 0; box-shadow: inset 0 0 22px 2px rgba(120,210,255,.55), inset 0 0 2px 1px rgba(255,255,255,.9); }
+.t-water .fx-a { left: 0; right: 0; top: 0; height: 230px; background: #fff; filter: url(#fxW); -webkit-mask-image: linear-gradient(to bottom, #000, transparent); mask-image: linear-gradient(to bottom, #000, transparent); opacity: .5; }
+.t-water .fx-c { left: 0; right: 0; bottom: 0; height: 160px; background: linear-gradient(to top, rgba(80,190,255,.28), transparent); }
+.t-water i { bottom: -24px; border-radius: 50%; background: radial-gradient(circle at 32% 30%, rgba(255,255,255,.95) 0 9%, rgba(255,255,255,0) 28%), radial-gradient(circle at 50% 50%, rgba(160,225,255,.10) 55%, rgba(120,205,255,.55) 100%); box-shadow: inset 0 0 0 1px rgba(120,205,255,.7); animation: fxrise var(--t) cubic-bezier(.3,.1,.4,1) var(--d) infinite; }
+
+/* CHOCOLATE: dark glossy rim with a slow specular sweep */
+.t-choco .fx-ring { inset: 0; box-shadow: inset 0 0 0 5px #4a2410, inset 0 0 0 6px rgba(255,214,150,.5), inset 0 0 34px 4px rgba(74,36,16,.45); }
+.t-choco .fx-a { top: 0; bottom: 0; width: 38%; left: 0; background: linear-gradient(100deg, transparent 30%, rgba(255,236,200,.55) 50%, transparent 70%); animation: fxsweep 4.6s ease-in-out infinite; mix-blend-mode: soft-light; }
+.t-choco .fx-b { inset: 0; box-shadow: inset 0 14px 20px -12px rgba(92,48,20,.55); }
+
+/* GOLDEN CRUNCH: warm toasted light from the corners, a few crumbs */
+.t-gold .fx-ring { inset: 0; box-shadow: inset 0 0 0 4px #e9b33c, inset 0 0 0 5px rgba(255,238,170,.75), inset 0 0 36px 2px rgba(240,170,40,.38); }
+.t-gold .fx-a { top: 0; bottom: 0; width: 34%; left: 0; background: linear-gradient(100deg, transparent 30%, rgba(255,240,190,.6) 50%, transparent 70%); animation: fxsweep 5.2s ease-in-out infinite; mix-blend-mode: soft-light; }
+.t-gold i { top: -10px; border-radius: 2px 5px 3px 4px; background: #e9b33c; opacity: 0; animation: fxfall var(--t) linear var(--d) infinite; }
+
+/* FRESH: dappled sunlight through leaves, a few leaves turning as they fall */
+.t-leaf .fx-ring { inset: 0; box-shadow: inset 0 0 0 4px #2f9e57, inset 0 0 30px 2px rgba(40,160,90,.35); }
+.t-leaf .fx-a { left: -10%; right: -10%; top: 0; height: 200px; background: radial-gradient(40% 70% at 22% 20%, rgba(255,250,170,.55), transparent 70%), radial-gradient(34% 60% at 72% 8%, rgba(255,250,190,.45), transparent 70%); filter: blur(8px); animation: fxdrift 7s ease-in-out infinite alternate; }
+.t-leaf i { top: -14px; width: calc(var(--s) * 1.9); height: calc(var(--s) * 1.1); border-radius: 100% 0 100% 0; background: linear-gradient(135deg, #5ec27c, #2a8c4a); animation: fxfall var(--t) ease-in-out var(--d) infinite; }
+
+/* everything else: a clean light sweep */
+.t-plain .fx-ring { inset: 0; box-shadow: inset 0 0 0 3px #d7deea, inset 0 0 26px rgba(120,140,190,.18); }
+.t-plain .fx-a { top: 0; bottom: 0; width: 36%; left: 0; background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.7) 50%, transparent 70%); animation: fxsweep 5.5s ease-in-out infinite; mix-blend-mode: soft-light; }
+@media (prefers-reduced-motion: reduce) { .ip-fx *, .ip-fx { animation: none !important; } }

@@ -706,6 +706,8 @@
     try { var rr = await Promise.all([getCore(), D.suggestions(), D.indents()]); core = rr[0]; sg = rr[1]; ind = rr[2]; } catch (e) { return failed(v, e); }
     var S = F.reorder, iby = {}; core.items.forEach(function (i) { iby[i.id] = i; });
     sg.forEach(function (s) { s.group_name = (iby[s.item_id] && iby[s.item_id].group_name) || null; });
+    hxChips([[String(sg.length), 'items to order'], [num(sg.reduce(function (a, s) { return a + Number(s.suggested_qty || 0); }, 0)), 'units to order'], [String(sg.filter(function (s) { return s.band === 'out'; }).length), 'out of stock']]);
+    hxTiles(sg.slice().sort(function (a, b) { return Number(b.max_level) - Number(a.max_level); }).map(function (s) { return iby[s.item_id]; }));
     var STAT = ['draft', 'approved', 'ordered', 'received', 'cancelled'], bc = { all: sg.length };
     sg.forEach(function (s) { bc[s.band] = (bc[s.band] || 0) + 1; });
     var SO = [['demand', 'Sort: biggest demand'], ['qty', 'Sort: biggest order'], ['low', 'Sort: lowest stock'], ['name', 'Sort: name A to Z'], ['code', 'Sort: item code']];
