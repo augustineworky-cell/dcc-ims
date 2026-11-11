@@ -45,6 +45,7 @@
     return '<div class="art" style="background:linear-gradient(145deg,hsl(' + h + ' 58% 52%),hsl(' + ((h + 35) % 360) + ' 62% 36%))"><svg viewBox="0 0 100 100" fill="rgba(255,255,255,.92)" aria-hidden="true">' + SHAPES[kind(it.name)] + '</svg></div>';
   }
   function inner(it) { return it.image_url ? '<img src="' + esc(it.image_url) + '" alt="" loading="lazy" decoding="async" width="64" height="64">' : art(it); }
+  PH.inner = inner;
   PH.thumb = function (it, cls) { return '<span class="th ' + (cls || '') + '" data-th="' + esc(it.id) + '">' + inner(it) + '</span>'; };
 
   /* clickable cell for tables: picture + code + name. Opens the side panel. */

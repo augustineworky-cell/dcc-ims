@@ -288,7 +288,9 @@
 
   /* ---------- STOCK ---------- */
   /* ---------- shared filter helpers ---------- */
-  var F = { stock: { q: '', band: 'all', grp: '', wh: '', photo: '', sort: 'health', lim: 100 }, reorder: { q: '', band: 'all', grp: '', sort: 'demand', st: 'all' }, dash: { grp: '', top: 10, lvl: 'oc' }, items: { q: '', grp: '', photo: '', lim: 100 } };
+  var VIEW = (function () { try { return localStorage.getItem('gg_view') || 'grid'; } catch (e) { return 'grid'; } })();
+  function setView(x) { VIEW = x; try { localStorage.setItem('gg_view', x); } catch (e) {} }
+  var F = { settab: 'items', stock: { q: '', band: 'all', grp: '', wh: '', photo: '', sort: 'health', lim: 100 }, reorder: { q: '', band: 'all', grp: '', sort: 'demand', st: 'all' }, dash: { grp: '', top: 10, lvl: 'oc' }, items: { q: '', grp: '', photo: '', lim: 100 } };
   function NG(h) { return (h && h.group_name) || '(no group)'; }
   function groupsOf(items) { var m = {}; items.forEach(function (i) { var g = NG(i); m[g] = (m[g] || 0) + 1; }); return Object.keys(m).sort().map(function (g) { return [g, g + ' (' + m[g] + ')']; }); }
   function opts(list, cur) { return list.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (String(o[0]) === String(cur) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join(''); }
@@ -318,7 +320,8 @@
       '<div class="fbar"><input class="inp sm" id="q" type="search" placeholder="Search code, name or group" autocomplete="off" value="' + esc(S.q) + '">' +
       sel('fg', [['', 'All groups']].concat(groupsOf(core.items)), S.grp, 'Group') + sel('fw', WO, S.wh, 'Warehouse') +
       sel('fp', [['', 'All photos'], ['with', 'With photo'], ['without', 'No photo yet']], S.photo, 'Photo') + sel('fs', SO, S.sort, 'Sort') +
-      '<button type="button" class="lnk" id="fc" hidden>Clear filters</button></div>' +
+      '<button type="button" class="lnk" id="fc" hidden>Clear filters</button>' +
+      '<div class="seg" id="vw" role="group" aria-label="View"><button type="button" data-v="grid" class="' + (VIEW === 'grid' ? 'on' : '') + '" aria-label="Photo grid"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Photos</button><button type="button" data-v="list" class="' + (VIEW === 'list' ? 'on' : '') + '" aria-label="List"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>List</button></div></div>' +
       chipRow('chips', CH, S.band, counts) + '<div class="fcount mu" id="fcnt"></div><div class="tw card2 flush" id="tbl"></div>';
     function rank(h) { return (h.band === 'out' && !(Number(h.max_level) > 0)) ? 6 : ORDER[h.band]; }
     var SORTS = {
@@ -338,11 +341,25 @@
       return true;
     }
     function draw(anim) {
-      var rows = core.health.filter(pass).sort(SORTS[S.sort] || SORTS.health), shown = rows.slice(0, S.lim);
+      var rows = core.health.filter(pass).sort(SORTS[S.sort] || SORTS.health), grid = VIEW === 'grid', shown = rows.slice(0, grid ? S.lim * 0.6 : S.lim);
+      $('#tbl').classList.toggle('flush', !grid); $('#tbl').classList.toggle('gridwrap', grid);
       var on = S.q || S.grp || S.wh || S.photo || S.band !== 'all';
       $('#fc').hidden = !on;
       $('#fcnt').textContent = 'Showing ' + num(shown.length) + ' of ' + num(rows.length) + ' item' + (rows.length === 1 ? '' : 's') + (on ? ' (filtered from ' + num(core.health.length) + ')' : '');
       if (!rows.length) { $('#tbl').innerHTML = '<div class="empty">No items match these filters.</div>'; if (anim) fx($('#tbl')); return; }
+      if (grid) {
+        $('#tbl').innerHTML = '<div class="pg">' + shown.map(function (h) {
+          var it = iby[h.item_id] || {}, m = by[h.item_id] || {}, st = Number(h.stock);
+          var whs = wh.map(function (w) { var x = m[w.id] || 0; return '<span class="' + (x < 0 ? 'neg' : (x === 0 ? 'zero' : '')) + '"><i>' + esc(w.code) + '</i> ' + num(x) + '</span>'; }).join('');
+          return '<button type="button" class="pc" data-item="' + esc(h.item_id) + '"><span class="pp" data-th="' + esc(h.item_id) + '">' + (window.PHOTOS ? window.PHOTOS.inner(it) : '') + '</span>' +
+            '<span class="pv">' + cover(h) + '</span><span class="pn">' + esc(h.name) + '</span>' +
+            '<span class="pm"><b class="' + (st < 0 ? 'neg' : (st === 0 ? 'zero' : '')) + '">' + num(st) + '</b> <span class="mu">' + esc(h.unit) + '</span><span class="pb">' + chip(h.band) + '</span></span>' +
+            '<span class="pw">' + whs + '</span><span class="mu pcd">' + esc(h.code) + '</span></button>';
+        }).join('') + '</div>' + (rows.length > shown.length ? '<div class="empty"><button type="button" class="b2 inl ghost" id="more">Show more (' + num(rows.length - shown.length) + ' left)</button></div>' : '');
+        var mo2 = $('#more'); if (mo2) { mo2.onclick = function () { S.lim += 100; draw(false); }; if (window.IntersectionObserver) new IntersectionObserver(function (e, o) { if (e[0].isIntersecting) { o.disconnect(); mo2.click(); } }, { rootMargin: '600px' }).observe(mo2); }
+        if (anim) fx($('#tbl'));
+        return;
+      }
       $('#tbl').innerHTML = '<table class="t"><thead><tr><th>Item</th>' + wh.map(function (w) { return '<th class="r" title="' + esc(w.name) + '">' + esc(w.code) + '</th>'; }).join('') +
         '<th class="r">Total</th><th class="r">Cover</th><th>Health</th></tr></thead><tbody>' +
         shown.map(function (h) {
@@ -359,6 +376,7 @@
     var qt; $('#q').oninput = function (e) { S.q = e.target.value; S.lim = 100; clearTimeout(qt); qt = setTimeout(function () { draw(true); }, 120); };
     [['fg', 'grp'], ['fw', 'wh'], ['fp', 'photo'], ['fs', 'sort']].forEach(function (x) { $('#' + x[0]).onchange = function (e) { S[x[1]] = e.target.value; S.lim = 100; draw(true); }; });
     chipsOn(v, 'chips', function (b) { S.band = b; S.lim = 100; draw(true); });
+    $('#vw').onclick = function (e) { var b = e.target.closest('[data-v]'); if (!b) return; setView(b.getAttribute('data-v')); $$('#vw button').forEach(function (x) { x.classList.toggle('on', x === b); }); S.lim = 100; draw(true); };
     $('#fc').onclick = function () { F.stock = S = { q: '', band: 'all', grp: '', wh: '', photo: '', sort: S.sort, lim: 100 }; P.stock(v, c); };
     draw(false);
     soft(v, c, 'stock');
@@ -623,12 +641,15 @@
     }
     function draw() {
       var it = edit || { lead_time_days: 7, safety_factor: 1.2, moq: 0, seed_daily_usage: 0, unit: 'pcs' };
-      v.innerHTML = head('Settings', 'Warehouses, items and people.') +
-        '<h2 class="h2">Warehouses</h2><div class="tw card2 flush"><table class="t"><thead><tr><th>Code</th><th>Name</th><th>Type</th></tr></thead><tbody>' +
+      var T = F.settab, tabs = [['wh', 'Warehouses', core.wh.length], ['items', 'Items', core.items.length]];
+      if (canManage()) { tabs.push(['photos', 'Photos', null]); tabs.push(['people', 'People', people.length]); }
+      if (!tabs.some(function (x) { return x[0] === T; })) T = F.settab = 'items';
+      var tb = '<div class="stabs" id="stabs" role="tablist">' + tabs.map(function (x) { return '<button type="button" role="tab" data-t="' + x[0] + '" class="' + (x[0] === T ? 'on' : '') + '">' + x[1] + (x[2] != null ? ' <em>' + x[2] + '</em>' : '') + '</button>'; }).join('') + '</div>';
+      var secWh = '<h2 class="sec-h">Warehouses</h2><p class="sec-s">Places where stock is kept. Each one gets its own column on the Stock page.</p><div class="tw card2 flush"><table class="t"><thead><tr><th>Code</th><th>Name</th><th>Type</th></tr></thead><tbody>' +
         core.wh.map(function (w) { return '<tr><td><b>' + esc(w.code) + '</b></td><td>' + esc(w.name) + '</td><td class="mu">' + esc(w.kind) + '</td></tr>'; }).join('') + '</tbody></table></div>' +
-        (canManage() ? '<form class="card2 inlineform" id="wf"><input class="inp sm" id="wc" placeholder="Code (e.g. NOI)" maxlength="8" required><input class="inp sm" id="wn" placeholder="Name" required><select class="inp sm" id="wk"><option value="warehouse">warehouse</option><option value="office">office</option></select><button class="b2 inl" type="submit">Add warehouse</button></form>' : '') +
-        '<h2 class="h2">Items <span class="mu">' + core.items.length + '</span></h2>' +
-        (canManage() ? '<div id="bulkph" style="margin-bottom:14px"></div>' : '') +
+        (canManage() ? '<form class="card2 inlineform" id="wf"><input class="inp sm" id="wc" placeholder="Code (e.g. NOI)" maxlength="8" required><input class="inp sm" id="wn" placeholder="Name" required><select class="inp sm" id="wk"><option value="warehouse">warehouse</option><option value="office">office</option></select><button class="b2 inl" type="submit">Add warehouse</button></form>' : '');
+      var secPh = '<h2 class="sec-h">Item photos</h2><p class="sec-s">Add or replace pictures in bulk. Name each file with the item code (D0123.jpg) or drop a .zip.</p><div id="bulkph" style="margin-bottom:14px"></div>';
+      var secIt = '<h2 class="sec-h">Items</h2><p class="sec-s">Add a new item or edit lead time, pack size and daily usage.</p>' +
         (canManage() ? '<form class="card2 mf" id="itf"><div class="two"><label class="fl">Code<input class="inp" id="ic" value="' + esc(it.code || '') + '"' + (edit ? ' readonly' : '') + ' required></label><label class="fl">Name<input class="inp" id="in" value="' + esc(it.name || '') + '" required></label></div>' +
           '<div class="four"><label class="fl">Group<input class="inp" id="ig" value="' + esc(it.group_name || '') + '"></label><label class="fl">Unit<input class="inp" id="iu" value="' + esc(it.unit) + '" required></label>' +
           '<label class="fl">Lead time (days)<input class="inp" id="il" type="number" min="0" value="' + esc(it.lead_time_days) + '"></label><label class="fl">Safety factor<input class="inp" id="is" type="number" min="1" step="0.05" value="' + esc(it.safety_factor) + '"></label></div>' +
@@ -637,12 +658,14 @@
           '<div class="err2" id="ie"></div><div class="two"><button class="b2" type="submit">' + (edit ? 'Save changes' : 'Add item') + '</button>' + (edit ? '<button class="b2 ghost" type="button" id="cx">Cancel</button>' : '') + '</div></form>' : '') +
         '<div class="fbar"><input class="inp sm" id="iq" type="search" placeholder="Search items" autocomplete="off" value="' + esc(IS.q) + '">' + sel('igp', [['', 'All groups']].concat(groupsOf(core.items)), IS.grp, 'Group') +
         sel('ipf', [['', 'All photos'], ['with', 'With photo'], ['without', 'No photo yet']], IS.photo, 'Photo') + '</div><div class="fcount mu" id="icnt"></div>' +
-        '<div class="tw card2 flush" id="itbl"></div>' +
-        (canManage() ? '<h2 class="h2">People</h2><div class="tw card2 flush"><table class="t"><thead><tr><th>Name</th><th>Role</th></tr></thead><tbody>' +
+        '<div class="tw card2 flush" id="itbl"></div>';
+      var secPe = (canManage() ? '<h2 class="sec-h">People</h2><p class="sec-s">Who can sign in and what they can do.</p><div class="tw card2 flush"><table class="t"><thead><tr><th>Name</th><th>Role</th></tr></thead><tbody>' +
           people.map(function (p) {
             return '<tr><td>' + esc(p.full_name || '') + (p.active ? '' : ' <span class="mu">(inactive)</span>') + '</td><td>' + (isAdmin() ? '<select class="inp sm rl" data-u="' + esc(p.user_id) + '">' +
               ['admin', 'manager', 'staff', 'viewer'].map(function (r) { return '<option' + (r === p.role ? ' selected' : '') + '>' + r + '</option>'; }).join('') + '</select>' : esc(p.role)) + '</td></tr>';
           }).join('') + '</tbody></table></div><p class="mu note">To add a person: create their login in Supabase (Authentication, Users), then add them here by linking a profile. Roles: admin does everything, manager can order and edit items, staff posts stock, viewer only looks.</p>' : '');
+      v.innerHTML = head('Settings', 'Warehouses, items, photos and people.') + tb + (T === 'wh' ? secWh : T === 'photos' ? secPh : T === 'people' ? secPe : secIt);
+      $('#stabs').onclick = function (e) { var b = e.target.closest('[data-t]'); if (!b) return; F.settab = b.getAttribute('data-t'); edit = null; draw(); window.scrollTo(0, 0); };
       if ($('#bulkph') && window.PHOTOS) window.PHOTOS.mountBulk($('#bulkph'), P.__env());
       var wf = $('#wf');
       if (wf) wf.onsubmit = async function (e) {
@@ -657,10 +680,12 @@
         try { await D.saveItem(row); c.say('Item saved'); edit = null; dirty(); core = await getCore(true); draw(); } catch (x) { $('#ie').textContent = errMsg(x); }
       };
       if ($('#cx')) $('#cx').onclick = function () { edit = null; draw(); };
-      var iqt; $('#iq').oninput = function (e) { IS.q = e.target.value; IS.lim = 100; clearTimeout(iqt); iqt = setTimeout(function () { drawItems(true); }, 120); };
-      $('#igp').onchange = function (e) { IS.grp = e.target.value; IS.lim = 100; drawItems(true); };
-      $('#ipf').onchange = function (e) { IS.photo = e.target.value; IS.lim = 100; drawItems(true); };
-      drawItems(false);
+      if ($('#iq')) {
+        var iqt; $('#iq').oninput = function (e) { IS.q = e.target.value; IS.lim = 100; clearTimeout(iqt); iqt = setTimeout(function () { drawItems(true); }, 120); };
+        $('#igp').onchange = function (e) { IS.grp = e.target.value; IS.lim = 100; drawItems(true); };
+        $('#ipf').onchange = function (e) { IS.photo = e.target.value; IS.lim = 100; drawItems(true); };
+        drawItems(false);
+      }
       $$('.rl', v).forEach(function (s) {
         s.onchange = async function () { try { await D.setRole(s.getAttribute('data-u'), s.value); c.say('Role updated'); } catch (x) { c.say(errMsg(x)); } };
       });
